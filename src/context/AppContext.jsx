@@ -213,37 +213,54 @@ export function AppProvider({ children }) {
         console.log('[AppContext] auth event:', event)
 
         if (event === 'INITIAL_SESSION') {
-          if (session) {
-            const { data: restoredUser, error } = await authApi.restoreSession()
-            if (error || !restoredUser) {
-              console.error('[AppContext] session restore failed:', error?.message)
-              await supabase.auth.signOut()
-            } else {
-              setUser(restoredUser)
-              await loadAllDataRef.current(restoredUser)
-            }
-          }
-          // Always mark auth as ready after INITIAL_SESSION, regardless of outcome
-          setAuthReady(true)
-          return
-        }
+  console.log('[INITIAL_SESSION]', session)
+
+  if (!session) {
+    setAuthReady(true)
+    return
+  }
+
+  const { data: restoredUser, error } = await authApi.restoreSession()
+
+  if (error || !restoredUser) {
+    console.error('[INITIAL_SESSION] restore failed')
+    setAuthReady(true)
+    return
+  }
+
+  console.log('[INITIAL USER]', restoredUser)
+
+  setUser(restoredUser)
+
+  await loadAllDataRef.current(restoredUser)
+
+  setAuthReady(true)
+
+  return
+}
 
         if (event === 'SIGNED_IN') {
-          // login() already called setUser + loadAllData directly — skip here
-          if (sessionHandledByLogin.current) {
-            sessionHandledByLogin.current = false
-            return
-          }
-          // Only reaches here for OAuth/magic-link flows
-          if (session) {
-            const { data: restoredUser } = await authApi.restoreSession()
-            if (restoredUser) {
-              setUser(restoredUser)
-              await loadAllDataRef.current(restoredUser)
-            }
-          }
-          return
-        }
+  console.log('[SIGNED_IN EVENT]')
+
+  if (!session) return
+
+  const { data: restoredUser, error } = await authApi.restoreSession()
+
+  if (error || !restoredUser) {
+    console.error('[SIGNED_IN] restore failed')
+    return
+  }
+
+  console.log('[SIGNED_IN USER]', restoredUser)
+
+  setUser(restoredUser)
+
+  await loadAllDataRef.current(restoredUser)
+
+  setAuthReady(true)
+
+  return
+}
 
         if (event === 'SIGNED_OUT') {
           setUser(null)
@@ -261,21 +278,21 @@ export function AppProvider({ children }) {
 
   // ── Login ──────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
-    console.log('[AppContext] login:', email)
-    setAuthError(null)
+  console.log('[AppContext] login:', email)
+  setAuthError(null)
 
-    const { data: loggedInUser, error } = await authApi.login(email, password)
-    if (error) {
-      setAuthError(error.message)
-      return { error }
-    }
+  const { data: loggedInUser, error } = await authApi.login(email, password)
 
-    // Set flag BEFORE setUser so SIGNED_IN event (which fires next) skips its handler
-    sessionHandledByLogin.current = true
-    setUser(loggedInUser)
-    await loadAllData(loggedInUser)
-    return { data: loggedInUser }
-  }, [loadAllData])
+  if (error) {
+    setAuthError(error.message)
+    return { error }
+  }
+
+  // 🚨 DO NOT load data here
+  // Supabase SIGNED_IN event will handle everything
+
+  return { data: loggedInUser }
+}, [])
 
   // ── Logout ─────────────────────────────────────────────────────────────────
   const logout = useCallback(async () => {

@@ -37,12 +37,16 @@ export function ItemTemplates() {
     if (Object.keys(errs).length) { setErrors(errs); return }
     setLoading(true)
     try {
-      const data = { name: form.name.trim(), category: form.category.trim(), unit: form.unit,
-        default_price: Math.max(0, Number(form.defaultPrice)||0),
-        defaultPrice:  Math.max(0, Number(form.defaultPrice)||0),
-        low_stock_threshold: Math.max(0, Number(form.lowStockThreshold)||0),
-        lowStockThreshold:   Math.max(0, Number(form.lowStockThreshold)||0),
-        enabled: true }
+      const data = { 
+  name: form.name.trim(), 
+  category: form.category.trim(), 
+  unit: form.unit,
+
+  default_price: Math.max(0, Number(form.defaultPrice) || 0),
+  low_stock_threshold: Math.max(0, Number(form.lowStockThreshold) || 0),
+
+  enabled: true 
+}
       if (editing) await updateTemplate(editing.id, data)
       else         await createTemplate(data)
       showToast('success', editing ? 'Template Updated' : 'Template Created', form.name)
