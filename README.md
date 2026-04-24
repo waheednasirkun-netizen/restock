@@ -1,5 +1,5 @@
 # RestoStock — React + Vite + Supabase
-
+This is from Abubakar bro
 Restaurant Inventory Management System converted from a single HTML file to a
 full React + Vite project with Supabase as the backend.
 
